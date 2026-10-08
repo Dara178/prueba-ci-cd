@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  check-files:
+    name: Verificar archivos requeridos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Verificar que existe index.html
+        run: |
+          if [ ! -f "index.html" ]; then
+            echo "❌ ERROR: No se encontró el archivo index.html"
+            exit 1
+          else
+            echo "✅ index.html encontrado"
+          fi
+
+      - name: Verificar que existe script.js
+        run: |
+          if [ ! -f "script.js" ]; then
+            echo "❌ ERROR: No se encontró el archivo script.js"
+            exit 1
+          else
+            echo "✅ script.js encontrado"
+          fi
+
+  deploy:
+    name: Desplegar en GitHub Pages
+    needs: check-files
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Subir artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
